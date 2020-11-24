@@ -6,7 +6,8 @@ from rest_framework import generics
 import django_filters.rest_framework
 from .models import Scene, NPCNode, Goods, Actions, ActionEffect, NodeCheckout
 from .serializers import SceneSerializer, NPCSerializer, NPCSerializerRetrieve, GoodSerializer, GoodsSerializerRetrieve, \
-    ActionSerializer, AFSerializer, AFRetrieveSerializer, NodeSerializer, ActionEntrySerializer
+    ActionSerializer, AFSerializer, AFRetrieveSerializer, NodeSerializer, ActionEntrySerializer, GoodNodeSerializer, \
+    NPCNodeSerializer
 
 
 # Create your views here.
@@ -40,9 +41,11 @@ class NPCRetrieve(generics.RetrieveAPIView):
         return queryset
 
 
-class GoodList(FilterMixin, generics.ListCreateAPIView):
+class GoodList(generics.ListCreateAPIView):
     queryset = Goods.objects.all()
     serializer_class = GoodSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['scene']
 
 
 class GoodRetrieve(generics.RetrieveAPIView):
@@ -54,10 +57,11 @@ class GoodRetrieve(generics.RetrieveAPIView):
         queryset = Goods.objects.filter(scene_id=scene)
         return queryset
 
-
-class ActionList(FilterMixin, generics.ListCreateAPIView):
+class ActionList(generics.ListCreateAPIView):
     queryset = Actions.objects.all()
     serializer_class = ActionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['scene']
 
 
 class ActionRetrieve(generics.RetrieveAPIView):
@@ -102,20 +106,12 @@ class Entry(APIView):
         scene = self.request.GET.get('scene')
         entry = {}
         goods = Goods.objects.filter(scene=scene)
-        npcs = NPCNode.objects.filter(scene=scene)
-        actions = Actions.objects.filter(scene=scene)
-        goods_serializer = GoodSerializer(goods, many=True)
-        npcs_serializer = NPCSerializer(npcs, many=True)
-        actions_serializer = ActionEntrySerializer(actions, many=True)
-        entry['source'] = actions_serializer.data
-
+        npc = NPCNode.objects.filter(scene=scene)
+        goods_serializer = NPCNodeSerializer(goods, many=True)
+        npc_serializer = GoodNodeSerializer(npc, many=True)
         good_data = goods_serializer.data
-        for good in good_data:
-            good['target_type'] = 'good'
-
-        npc_data = npcs_serializer.data
-        for npc in npc_data:
-            npc['target_type'] = 'npc'
+        npc_data = npc_serializer.data
+        entry['source'] = npc_data
         entry['target'] = npc_data + good_data
 
         return Response(entry)

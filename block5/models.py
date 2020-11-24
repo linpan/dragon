@@ -88,10 +88,15 @@ class NPCNode(models.Model):
     type_node = models.CharField(max_length=32, verbose_name='节点类型')
 
     # the common attribute from scene
-    team = models.ForeignKey(Team, related_name='npc', on_delete=models.CASCADE)
-    role = models.ForeignKey(Role, related_name='npc', on_delete=models.CASCADE)
-    job = models.ForeignKey(Job, related_name='npc', on_delete=models.CASCADE)
-    gender = models.ForeignKey(Gender, related_name='npc', on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, related_name='npc',  on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.ForeignKey(Role, related_name='npc',  on_delete=models.SET_NULL, null=True, blank=True)
+    job = models.ForeignKey(Job, related_name='npc',  on_delete=models.SET_NULL, null=True, blank=True)
+    gender = models.ForeignKey(Gender, related_name='npc',  on_delete=models.SET_NULL, null=True, blank=True)
+    target = models.ForeignKey('ActionEffect', related_name='npc_target',
+                               on_delete=models.SET_NULL, null=True, blank=True, verbose_name='来自af的我目标')
+    source = models.ForeignKey('ActionEffect', related_name='npc_source',
+                               on_delete=models.SET_NULL, null=True, blank=True,
+                               verbose_name='来自af的动作源')
 
     def __str__(self):
         return self.node
@@ -121,6 +126,7 @@ class Goods(models.Model):
     type_node = models.CharField(max_length=32, verbose_name='节点类型')
 
     item_type = models.ForeignKey(ItemType, related_name='good', on_delete=models.CASCADE)
+    af = models.ForeignKey('ActionEffect', related_name='good', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -175,13 +181,11 @@ class ActionExtraAttrs(models.Model):
 
 
 class ActionEffect(models.Model):
+    """
+    fix: af 1:n  npc/goodgi
+    """
+
     scene = models.ForeignKey(Scene, related_name='af', on_delete=models.CASCADE)
-
-    action = models.ForeignKey(Actions, related_name='af', on_delete=models.CASCADE)
-
-    # object + npc
-    good = models.ForeignKey(Goods, related_name='af', on_delete=models.CASCADE, blank=True, null=True)
-    npc = models.ForeignKey(NPCNode, related_name='af', on_delete=models.CASCADE, blank=True, null=True)
 
     name = models.CharField(max_length=64, verbose_name="af的名称")
     node = models.CharField(max_length=32, verbose_name='节点编号')

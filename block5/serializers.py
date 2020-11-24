@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from django.forms.models import model_to_dict
 
@@ -172,6 +173,33 @@ class GoodRelatedActionSerializer(serializers.ModelSerializer):
         exclude = ('item_type', 'action', 'scene')
 
 
+
+
+
+class NPCRelatedAFSerializer(serializers.ModelSerializer):
+    target_type = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = NPCNode
+        fields = ('id', 'name', 'node', 'type_node', 'target_type')
+
+
+class NPCNodeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = NPCNode
+        fields = ('id', 'name', 'node', 'type_node', 'scene')
+
+
+class GoodNodeSerializer(serializers.ModelSerializer):
+    """
+    填充表单书记
+    """
+    class Meta:
+        model = Goods
+        fields = ('id', 'name', 'node', 'type_node', 'scene')
+
+
 class GoodSerializer(serializers.ModelSerializer):
     attrs = NPCAttrsSerializer(many=True)
     actions = GoodRelatedActionSerializer(many=True)
@@ -186,7 +214,7 @@ class GoodSerializer(serializers.ModelSerializer):
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
         scene = validated_data.get('scene')
-        good, created = Goods.objects.update_or_create(node=node, type_node=type_node, defaults=validated_data)
+        good, created = Goods.objects.update_or_create(node=node, scene=scene, type_node=type_node, defaults=validated_data)
         if attrs:
             good.attrs.all().delete()
             GoodsExtraAttrs.objects.bulk_create([
@@ -215,7 +243,6 @@ class ActionEntrySerializer(serializers.ModelSerializer):
         model = Actions
         fields = ('id', 'name', 'node', 'type_node',  'scene',
                   'attack_duration', 'attack_backswing', 'transitive', 'is_transitive_verb')
-
 
 
 class ActionSerializer(serializers.ModelSerializer):
@@ -252,51 +279,64 @@ class ActionSerializer(serializers.ModelSerializer):
 
 
 class AFSerializer(serializers.ModelSerializer):
-    target = serializers.CharField(write_only=True)
-    target_type = serializers.CharField(write_only=True)
+    npc_target = NPCNodeSerializer(many=True)  # source
+    npc_source = NPCNodeSerializer(many=True)  # source
 
     class Meta:
         model = ActionEffect
-        fields = ('id', 'scene', 'action', 'name', 'node', 'type_node',
-                  'condition', 'effect', 'target', 'target_type')
+        fields = ('id', 'scene', 'name', 'node', 'type_node',
+                  'condition', 'effect', 'npc_source', 'npc_target')
 
     def create(self, validated_data):
-        target = validated_data.pop("target")
-        target_type = validated_data.pop("target_type")
+        print(validated_data)
+        source = validated_data.pop("npc_source")
+        target = validated_data.pop('npc_target')
+        scene = validated_data.get('scene')
         node = validated_data.pop('node')
-        type_node = validated_data.pop("type_node")
-        af, created = ActionEffect.objects.update_or_create(node=node, type_node=type_node, defaults=validated_data)
-        if target_type == 'npc':
-            af.good_id = None
-            af.npc_id = target
-        else:
-            af.npc_id = None
-            af.good_id = target
-        af.save()
+        type_node = validated_data.pop('type_node')
+        af, created = ActionEffect.objects.update_or_create(scene=scene, node=node, type_node=type_node, defaults=validated_data)
+
+        # 动作实施者
+        for s in source:
+            print(s)
+            NPCNode.objects.filter(name=s['name'], node=s['node'], scene_id=scene).update(source=None)
+
+        for s in source:
+            NPCNode.objects.filter(name=s['name'], node=s['node'], scene_id=scene).update(source=af)
+
+        # 目标（角色+物件）
+        for s in target:
+            if s['type_node'] == 'Character':
+                NPCNode.objects.filter(name=s['name'], node=s['node'],
+                                       scene_id=scene, type_node=s['type_node']).update(target=None)
+
+            else:
+                Goods.objects.filter(name=s['name'], node=s['node'], scene_id=scene).update(af=None)
+
+        for s in target:
+            if s['type_node'] == 'Character':
+                NPCNode.objects.filter(name=s['name'], node=s['node'], scene_id=scene).update(target=af)
+
+            else:
+                Goods.objects.filter(name=s['name'], node=s['node'], scene_id=scene).update(af=af)
+
         return af
 
 
 class AFRetrieveSerializer(serializers.ModelSerializer):
-    action = serializers.SerializerMethodField('get_source')
-    target = serializers.SerializerMethodField('get_target')
+    source = NPCNodeSerializer(many=True, source='npc_source')
+    target = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionEffect
-        fields = ('id', 'scene', 'action', 'name', 'node', 'type_node',
-                  'condition', 'effect', 'target')
-
-    def get_source(self, obj):
-        return model_to_dict(obj.action)
+        fields = ('id', 'scene', 'name', 'node', 'type_node',
+                  'condition', 'effect', 'source', 'target')
 
     def get_target(self, obj):
-        if obj.npc_id:
-            data = model_to_dict(obj.npc)
-            data['target_type'] = 'npc'
-            return data
-        else:
-            data = model_to_dict(obj.good)
-            data['target_type'] = 'good'
-            return data
+        good = Goods.objects.filter(af=obj, scene_id=obj.scene_id).values()
+        npc = NPCNode.objects.filter(target=obj, scene_id=obj.scene_id).values()
+
+        return [*good, *npc]
 
 
 class NodeSerializer(serializers.ModelSerializer):
@@ -307,4 +347,5 @@ class NodeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         scene = validated_data.pop('scene')
         node, created = NodeCheckout.objects.update_or_create(scene=scene, defaults=validated_data)
+        node.save()
         return node
