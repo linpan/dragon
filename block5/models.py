@@ -125,7 +125,7 @@ class Goods(models.Model):
     node = models.CharField(max_length=32, verbose_name='节点编号')
     type_node = models.CharField(max_length=32, verbose_name='节点类型')
 
-    item_type = models.ForeignKey(ItemType, related_name='good', on_delete=models.CASCADE)
+    item_type = models.ForeignKey(ItemType, related_name='good', on_delete=models.SET_NULL, null=True, blank=True)
     af = models.ForeignKey('ActionEffect', related_name='good', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):

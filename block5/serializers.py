@@ -160,10 +160,11 @@ class GoodsSerializerRetrieve(serializers.ModelSerializer):
         fields = ('id', 'name', 'scene', 'node', 'type_node', 'attrs', 'item_type', 'actions')
 
     def get_item(self, obj):
-        return model_to_dict(obj.item_type)
+        if obj.item_type:
+            return model_to_dict(obj.item_type)
+        return {}
 
     def get_action(self, obj):
-        print(obj.actions.all())
         return obj.actions.values()
 
 
