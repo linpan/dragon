@@ -108,20 +108,9 @@ class NPCSerializer(serializers.ModelSerializer):
         """
         attrs = validated_data.pop('attrs')
         node = validated_data.pop('node')
-        type_node = validated_data.pop("type_node")
         scene = validated_data.pop('scene')
+        type_node = validated_data.pop("type_node")
         npc, created = NPCNode.objects.update_or_create(scene=scene, node=node, type_node=type_node, defaults=validated_data)
-        # try:
-        #     npc = NPCNode.objects.get(node=node, type_node=type_node)
-        #     for key, value in validated_data.items():
-        #         setattr(npc, key, value)
-        #     npc.save()
-        # except NPCNode.DoesNotExist:
-        #     new_values = {'node': node, 'type_node': type_node}
-        #     new_values.update(validated_data)
-        #     npc = NPCNode(**new_values)
-        #     npc.save()
-
         if attrs:
             npc.attrs.all().delete()
             NPCExtraAttrs.objects.bulk_create([
@@ -214,8 +203,8 @@ class GoodSerializer(serializers.ModelSerializer):
         actions = validated_data.pop('actions')  # 关联动作
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
-        scene = validated_data.get('scene')
-        good, created = Goods.objects.update_or_create(node=node, scene=scene, type_node=type_node, defaults=validated_data)
+        scene = validated_data.pop('scene')
+        good, created = Goods.objects.update_or_create(scene_id=scene, node=node, type_node=type_node, defaults=validated_data)
         if attrs:
             good.attrs.all().delete()
             GoodsExtraAttrs.objects.bulk_create([
@@ -260,10 +249,10 @@ class ActionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         attrs = validated_data.pop('attrs')
         good = validated_data.pop('good')
-        scene = validated_data.get('scene')
+        scene = validated_data.pop('scene')
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
-        act, created = Actions.objects.update_or_create(node=node, type_node=type_node, defaults=validated_data)
+        act, created = Actions.objects.update_or_create(scene_id=scene, node=node, type_node=type_node, defaults=validated_data)
         if attrs:
             act.attrs.all().delete()
             ActionExtraAttrs.objects.bulk_create([
@@ -348,5 +337,4 @@ class NodeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         scene = validated_data.pop('scene')
         node, created = NodeCheckout.objects.update_or_create(scene=scene, defaults=validated_data)
-        node.save()
         return node
