@@ -252,7 +252,7 @@ class ActionSerializer(serializers.ModelSerializer):
         scene = validated_data.pop('scene')
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
-        act, created = Actions.objects.update_or_create(scene_id=scene, node=node, type_node=type_node, defaults=validated_data)
+        act, created = Actions.objects.update_or_create(scene=scene, node=node, type_node=type_node, defaults=validated_data)
         if attrs:
             act.attrs.all().delete()
             ActionExtraAttrs.objects.bulk_create([
