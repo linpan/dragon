@@ -217,7 +217,7 @@ class GoodSerializer(serializers.ModelSerializer):
         if actions:
             good.actions.update(goods=None)
             for g in actions:
-                Actions.objects.filter(node=g['node'], scene_id=scene.id).update(goods=g)
+                Actions.objects.filter(node=g['node'], scene_id=scene.id).update(goods=good)
         return good
 
 

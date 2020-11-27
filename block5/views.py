@@ -25,6 +25,7 @@ class SceneRetrieve(generics.RetrieveAPIView):
     queryset = Scene.objects.all()
     serializer_class = SceneSerializer
 
+
 class NPCList(FilterMixin, generics.ListCreateAPIView):
     queryset = NPCNode.objects.all()
     serializer_class = NPCSerializer
