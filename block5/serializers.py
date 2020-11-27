@@ -204,7 +204,7 @@ class GoodSerializer(serializers.ModelSerializer):
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
         scene = validated_data.pop('scene')
-        good, created = Goods.objects.update_or_create(scene_id=scene, node=node, type_node=type_node, defaults=validated_data)
+        good, created = Goods.objects.update_or_create(scene=scene, node=node, type_node=type_node, defaults=validated_data)
         if attrs:
             good.attrs.all().delete()
             GoodsExtraAttrs.objects.bulk_create([
