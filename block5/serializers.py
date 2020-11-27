@@ -204,20 +204,20 @@ class GoodSerializer(serializers.ModelSerializer):
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
         scene = validated_data.pop('scene')
-        good, created = Goods.objects.update_or_create(scene=scene, node=node, type_node=type_node, defaults=validated_data)
+        good, created = Goods.objects.update_or_create(scene=scene, node=node, type_node=type_node,
+                                                       defaults=validated_data)
+
         if attrs:
             good.attrs.all().delete()
             GoodsExtraAttrs.objects.bulk_create([
                 GoodsExtraAttrs(goods=good, **extra)
                 for extra in attrs
             ])
+            # fixme 如果移除挂载动作了
         if actions:
-            good.actions.all().delete()
-            Actions.objects.bulk_create([
-              Actions(goods=good, scene=scene, **extra)
-              for extra in actions
-            ])
-
+            good.actions.update(goods=None)
+            for g in actions:
+                Actions.objects.filter(node=g['node'], scene_id=scene.id).update(goods=g)
         return good
 
 
@@ -252,19 +252,21 @@ class ActionSerializer(serializers.ModelSerializer):
         scene = validated_data.pop('scene')
         node = validated_data.pop('node')
         type_node = validated_data.pop("type_node")
-        act, created = Actions.objects.update_or_create(scene=scene, node=node, type_node=type_node, defaults=validated_data)
+        act, created = Actions.objects.update_or_create(scene=scene, node=node, type_node=type_node,
+                                                        defaults=validated_data)
         if attrs:
             act.attrs.all().delete()
             ActionExtraAttrs.objects.bulk_create([
                 ActionExtraAttrs(action=act, **extra)
                 for extra in attrs
             ])
-       # todo if 不搭配动作呢
-        act.good.all().delete()
-        Goods.objects.bulk_create([
-            Goods(action=act, scene=scene,  **extra)
-            for extra in good
-        ])
+
+        # todo if 不搭配动作呢
+        # fixme 1 创建和更新的情况
+        if good:
+            act.good.update(action=None)
+            for g in good:
+                Goods.objects.filter(node=g['node'], scene_id=scene.id).update(action=act)
         return act
 
 
