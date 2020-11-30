@@ -120,7 +120,7 @@ class NPCExtraAttrs(models.Model):
 
 class Goods(models.Model):
     scene = models.ForeignKey(Scene, related_name='goods', on_delete=models.CASCADE)
-    action = models.ForeignKey('Actions', related_name='good', on_delete=models.CASCADE, blank=True, null=True)
+    action = models.ForeignKey('Actions', related_name='good', on_delete=models.SET_NULL, blank=True, null=True)
     name = models.CharField(max_length=64, verbose_name="NPC的名称")
     node = models.CharField(max_length=32, verbose_name='节点编号')
     type_node = models.CharField(max_length=32, verbose_name='节点类型')
@@ -151,7 +151,7 @@ class GoodsExtraAttrs(models.Model):
 class Actions(models.Model):
     scene = models.ForeignKey(Scene, related_name='actions', on_delete=models.CASCADE)
 
-    goods = models.ForeignKey(Goods, related_name='actions', on_delete=models.CASCADE, blank=True, null=True)
+    goods = models.ForeignKey(Goods, related_name='actions', on_delete=models.SET_NULL, blank=True, null=True)
     name = models.CharField(max_length=64, verbose_name="NPC的名称")
     node = models.CharField(max_length=32, verbose_name='节点编号')
     type_node = models.CharField(max_length=32, verbose_name='节点类型')

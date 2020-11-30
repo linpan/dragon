@@ -1,6 +1,7 @@
 from django.urls import path, include
 from .views import SceneList, SceneRetrieve, NPCList, NPCRetrieve, GoodList, GoodRetrieve, ActionList, ActionRetrieve, \
-    AFList, Entry, AFRetrieve, NodeCheckOutView, NodeCheckOutRetrive
+    AFList, Entry, AFRetrieve, NodeCheckOutView, NodeCheckOutRetrive, \
+    UpdateActionAndGood, UpdateGoodAndAction
 
 urlpatterns = [
     path('scene', SceneList.as_view()),
@@ -14,6 +15,8 @@ urlpatterns = [
     path('good/<int:scene>/<int:node>/', GoodRetrieve.as_view()),
     path('action/<int:scene>/<int:node>/', ActionRetrieve.as_view()),
     path('entry', Entry.as_view()),
+    path('update/action/good', UpdateActionAndGood.as_view()),
+    path('update/good/action', UpdateGoodAndAction.as_view()),
     path('node', NodeCheckOutView.as_view()),
     path('node/<int:scene>', NodeCheckOutRetrive.as_view()),
 ]

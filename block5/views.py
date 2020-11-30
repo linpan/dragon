@@ -118,3 +118,32 @@ class Entry(APIView):
         return Response(entry)
 
 
+class UpdateActionAndGood(APIView):
+    """
+    把动作放到物品里面
+    """
+    def post(self, request):
+        scene = self.request.data.get('scene')
+        action_id = self.request.data.get('action_id')
+        good_id = self.request.data.get('good_id')
+        act = Actions.objects.get(node=action_id, scene_id=scene)
+        good = Goods.objects.get(node=good_id, scene_id=scene)
+        act.goods = good
+        act.save()
+        return Response({'msg': act.id})
+
+
+class UpdateGoodAndAction(APIView):
+    """
+    物品-> 动作
+    """
+    def post(self, request):
+        scene = self.request.data.get('scene')
+        action_id = self.request.data.get('action_id')
+        good_id = self.request.data.get('good_id')
+        act = Actions.objects.get(node=action_id, scene_id=scene)
+        good = Goods.objects.get(node=good_id, scene_id=scene)
+        good.action = act
+        good.save()
+        return Response({'msg': act.id})
+
